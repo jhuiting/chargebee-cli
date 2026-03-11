@@ -104,13 +104,13 @@ func resolveCredentials(cmd *cobra.Command) (site, apiKey string, err error) {
 	if profileName != "" {
 		p, ok := cfg.Profiles[profileName]
 		if !ok {
-			return "", "", fmt.Errorf("profile %q not found — run 'cb login' first", profileName)
+			return "", "", fmt.Errorf("profile %q not found, run 'cb login' first", profileName)
 		}
 		profile = p
 	} else {
 		p, err := cfg.ActiveProfile()
 		if err != nil {
-			return "", "", fmt.Errorf("not logged in — run 'cb login' first")
+			return "", "", fmt.Errorf("not logged in, run 'cb login' first")
 		}
 		profile = p
 	}

@@ -17,9 +17,8 @@ import (
 func NewRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "cb",
-		Short: "Chargebee CLI — explore and monitor your Chargebee integration",
-		Long: `The Chargebee CLI helps you explore and monitor your Chargebee
-integration directly from the terminal.
+		Short: "Explore and manage your Chargebee integration",
+		Long: `Explore and manage your Chargebee integration from the terminal.
 
 To get started, run:
   cb login`,

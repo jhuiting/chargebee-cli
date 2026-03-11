@@ -119,7 +119,7 @@ func ResolvePageURL(page, site string) (string, error) {
 	}
 
 	if site == "" {
-		return "", fmt.Errorf("not logged in — run 'cb login' to use 'cb open %s'", page)
+		return "", fmt.Errorf("not logged in, run 'cb login' to use 'cb open %s'", page)
 	}
 
 	if entry.SitePath == "" {

@@ -77,7 +77,7 @@ func RetrieveOp(singular string) OpDef {
 func buildResourceCmd(def ResourceDef, factory ClientFactory) *cobra.Command {
 	resCmd := &cobra.Command{
 		Use:   def.Name,
-		Short: fmt.Sprintf("Browse %s", def.Name),
+		Short: fmt.Sprintf("List and retrieve %s", def.Name),
 	}
 
 	for _, op := range def.Operations {

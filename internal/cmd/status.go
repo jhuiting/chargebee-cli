@@ -35,7 +35,7 @@ func runStatus(cmd *cobra.Command, _ []string) error {
 
 	site, apiKey, err := resolveCredentials(cmd)
 	if err != nil {
-		out.Warning("Not logged in — run 'cb login' to get started")
+		out.Warning("Not logged in. Run 'cb login' to get started.")
 		return nil
 	}
 

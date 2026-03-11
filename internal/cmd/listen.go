@@ -106,9 +106,9 @@ func runListen(cmd *cobra.Command, _ []string) error {
 	defer stop()
 
 	if forwardTo != "" {
-		out.Status("Ready! Forwarding events from %s to %s", site, forwardTo)
+		out.Status("Ready. Forwarding events from %s to %s", site, forwardTo)
 	} else {
-		out.Status("Ready! Listening for events on %s", site)
+		out.Status("Ready. Listening for events on %s", site)
 	}
 	out.KeyValue("Signing key", signingSecret)
 	if len(eventTypes) > 0 {
@@ -160,7 +160,7 @@ func runListen(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	out.Dim("\nDone.")
+	out.Dim("\nListening stopped.")
 	return nil
 }
 

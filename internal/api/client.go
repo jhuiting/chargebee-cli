@@ -151,9 +151,9 @@ type APIError struct {
 // Error implements the error interface.
 func (e *APIError) Error() string {
 	if e.ErrorMsg != "" {
-		return fmt.Sprintf("chargebee api error (%d): [%s] %s", e.StatusCode, e.ErrorCode, e.ErrorMsg)
+		return fmt.Sprintf("Chargebee API error (%d): [%s] %s", e.StatusCode, e.ErrorCode, e.ErrorMsg)
 	}
-	return fmt.Sprintf("chargebee api error (%d): %s", e.StatusCode, e.Message)
+	return fmt.Sprintf("Chargebee API error (%d): %s", e.StatusCode, e.Message)
 }
 
 func parseAPIError(statusCode int, headers http.Header, data []byte) error {
