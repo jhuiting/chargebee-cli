@@ -38,7 +38,7 @@ changelog:
       - "^test:"
       - "^ci:"
 
-homebrew_casks:
+brews:
   - name: chargebee-cli
     repository:
       owner: jhuiting
@@ -50,7 +50,8 @@ homebrew_casks:
           owner: jhuiting
           name: homebrew-tap
           branch: main
-    binary: cb
     homepage: "https://github.com/jhuiting/chargebee-cli"
     description: "Chargebee CLI — develop, test, and manage your Chargebee integration"
     license: "MIT"
+    install: |
+      bin.install "cb"
