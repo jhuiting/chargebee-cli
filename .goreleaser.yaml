@@ -1,0 +1,56 @@
+version: 2
+
+builds:
+  - main: ./cmd/cb
+    binary: cb
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X github.com/jhuiting/chargebee-cli/internal/version.Version={{.Version}}
+      - -X github.com/jhuiting/chargebee-cli/internal/version.Commit={{.ShortCommit}}
+      - -X github.com/jhuiting/chargebee-cli/internal/version.Date={{.Date}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+
+homebrew_casks:
+  - name: chargebee-cli
+    repository:
+      owner: jhuiting
+      name: homebrew-tap
+      branch: "update/chargebee-cli-{{ .Version }}"
+      pull_request:
+        enabled: true
+        base:
+          owner: jhuiting
+          name: homebrew-tap
+          branch: main
+    binary: cb
+    homepage: "https://github.com/jhuiting/chargebee-cli"
+    description: "Chargebee CLI — develop, test, and manage your Chargebee integration"
+    license: "MIT"
