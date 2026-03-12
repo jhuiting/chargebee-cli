@@ -20,14 +20,16 @@ var releaseURL = "https://api.github.com/repos/jhuiting/chargebee-cli/releases/l
 
 // Info holds the result of an update check.
 type Info struct {
-	CurrentVersion  string
-	LatestVersion   string
-	UpdateAvailable bool
+	CurrentVersion   string
+	LatestVersion    string
+	UpdateAvailable  bool
+	NotifiedRecently bool
 }
 
 type cache struct {
 	CheckedAt     time.Time `json:"checked_at"`
 	LatestVersion string    `json:"latest_version"`
+	NotifiedAt    time.Time `json:"notified_at,omitempty"`
 }
 
 // CheckForUpdate checks if a newer CLI version is available.
@@ -48,7 +50,9 @@ func CheckForUpdate(ctx context.Context, currentVersion string) *Info {
 
 	cached, err := readCache(cachePath)
 	if err == nil && time.Since(cached.CheckedAt) < checkInterval {
-		return buildInfo(currentVersion, cached.LatestVersion)
+		info := buildInfo(currentVersion, cached.LatestVersion)
+		info.NotifiedRecently = !cached.NotifiedAt.IsZero() && time.Since(cached.NotifiedAt) < checkInterval
+		return info
 	}
 
 	latest, err := fetchLatestVersion(ctx)
@@ -56,12 +60,35 @@ func CheckForUpdate(ctx context.Context, currentVersion string) *Info {
 		return nil
 	}
 
+	var notifiedAt time.Time
+	if cached != nil {
+		notifiedAt = cached.NotifiedAt
+	}
+
 	_ = writeCache(cachePath, &cache{
 		CheckedAt:     time.Now(),
 		LatestVersion: latest,
+		NotifiedAt:    notifiedAt,
 	})
 
-	return buildInfo(currentVersion, latest)
+	info := buildInfo(currentVersion, latest)
+	info.NotifiedRecently = !notifiedAt.IsZero() && time.Since(notifiedAt) < checkInterval
+	return info
+}
+
+// MarkNotified records that the update notification was shown, so it can be
+// suppressed for the next 24 hours.
+func MarkNotified() {
+	path := cacheFilePath()
+	if path == "" {
+		return
+	}
+	cached, err := readCache(path)
+	if err != nil {
+		return
+	}
+	cached.NotifiedAt = time.Now()
+	_ = writeCache(path, cached)
 }
 
 func cacheFilePath() string {

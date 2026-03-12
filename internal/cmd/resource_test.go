@@ -1,7 +1,9 @@
 package cmd_test
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/jhuiting/chargebee-cli/internal/api"
 	"github.com/jhuiting/chargebee-cli/internal/cmd"
+	"github.com/jhuiting/chargebee-cli/internal/output"
 )
 
 func newResourceTestCmd(baseURL string) *cobra.Command {
@@ -199,4 +202,48 @@ func TestResourceRetrieveHasNoFilterFlags(t *testing.T) {
 
 	assert.Nil(t, customersCmd.Flags().Lookup("company"), "retrieve should not have filter flags")
 	assert.Nil(t, customersCmd.Flags().Lookup("email"), "retrieve should not have filter flags")
+}
+
+func TestResourceListEmptyShowsNoResults(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]any{"list": []any{}})
+	}))
+	defer srv.Close()
+
+	var stderrBuf bytes.Buffer
+	out := output.New(&stderrBuf, io.Discard)
+
+	origDefault := output.Default
+	output.Default = out
+	defer func() { output.Default = origDefault }()
+
+	root := newResourceTestCmd(srv.URL)
+	root.SetArgs([]string{"customers", "list"})
+	err := root.Execute()
+
+	require.NoError(t, err)
+	assert.Contains(t, stderrBuf.String(), "No results.")
+}
+
+func TestResourceListEmptyRawPassesThrough(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"list":[]}`))
+	}))
+	defer srv.Close()
+
+	var stderrBuf bytes.Buffer
+	out := output.New(&stderrBuf, io.Discard)
+
+	origDefault := output.Default
+	output.Default = out
+	defer func() { output.Default = origDefault }()
+
+	root := newResourceTestCmd(srv.URL)
+	root.SetArgs([]string{"customers", "list", "--raw"})
+	err := root.Execute()
+
+	require.NoError(t, err)
+	assert.NotContains(t, stderrBuf.String(), "No results.")
 }
