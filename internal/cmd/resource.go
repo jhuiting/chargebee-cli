@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jhuiting/chargebee-cli/internal/api"
+	"github.com/jhuiting/chargebee-cli/internal/output"
 	"github.com/jhuiting/chargebee-cli/internal/timeutil"
 )
 
@@ -112,8 +114,9 @@ func buildOpCmd(res ResourceDef, op OpDef, factory ClientFactory) *cobra.Command
 			cmd.Flags().String(f.Flag, "", f.Help)
 		}
 		if res.TimestampField != "" {
-			cmd.Flags().String("after", "", "only return results after this time (ISO date, unix, or relative like 7d, 24h)")
-			cmd.Flags().String("before", "", "only return results before this time (ISO date, unix, or relative like 7d, 24h)")
+			cmd.Flags().String("after", "", "filter results after this time (e.g. 2024-01-01, 7d, 24h, 1700000000)")
+			cmd.Flags().String("before", "", "filter results before this time (e.g. 2024-01-01, 7d, 24h, 1700000000)")
+			cmd.Example = fmt.Sprintf("  cb %s list --after 7d\n  cb %s list --before 2024-01-01\n  cb %s list -d \"%s[after]=2024-01-01\" --raw", res.Name, res.Name, res.Name, res.TimestampField)
 		}
 	}
 
@@ -142,11 +145,7 @@ func opLongHelp(res ResourceDef, op OpDef) string {
 			fmt.Fprintf(&b, "  cb %s list --%s %s\n", res.Name, res.Filters[0].Flag, filterExampleValue(res.Filters[0]))
 		}
 		fmt.Fprintf(&b, "  cb %s list -l 10\n", res.Name)
-		if res.TimestampField != "" {
-			fmt.Fprintf(&b, "  cb %s list --after 2024-01-01\n", res.Name)
-			fmt.Fprintf(&b, "  cb %s list --after 7d\n", res.Name)
-			fmt.Fprintf(&b, "  cb %s list -d \"%s[after]=2024-01-01\" --raw", res.Name, res.TimestampField)
-		} else {
+		if res.TimestampField == "" {
 			fmt.Fprintf(&b, "  cb %s list -d \"created_at[after]=1700000000\" --raw", res.Name)
 		}
 
@@ -220,6 +219,16 @@ func makeRunOp(res ResourceDef, op OpDef, factory ClientFactory) func(*cobra.Com
 
 		if showHeaders {
 			printResponseHeaders(os.Stderr, result)
+		}
+
+		if op.Name == "list" && !raw {
+			var envelope struct {
+				List []json.RawMessage `json:"list"`
+			}
+			if json.Unmarshal(result.JSON(), &envelope) == nil && envelope.List != nil && len(envelope.List) == 0 {
+				output.Default.Dim("No results.")
+				return nil
+			}
 		}
 
 		return printJSON(os.Stdout, result.JSON(), raw)

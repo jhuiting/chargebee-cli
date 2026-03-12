@@ -119,3 +119,32 @@ func TestCheckForUpdate_UsesCache(t *testing.T) {
 	assert.True(t, info.UpdateAvailable)
 	assert.Equal(t, 1, callCount)
 }
+
+func TestCheckForUpdate_NotifiedRecently(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]string{"tag_name": "v2.0.0"})
+	}))
+	defer srv.Close()
+
+	origURL := releaseURL
+	releaseURL = srv.URL
+	defer func() { releaseURL = origURL }()
+
+	t.Setenv("CB_CONFIG_DIR", t.TempDir())
+	t.Setenv("CB_NO_UPDATE_CHECK", "")
+
+	// First check: not recently notified.
+	info := CheckForUpdate(context.Background(), "v1.0.0")
+	require.NotNil(t, info)
+	assert.True(t, info.UpdateAvailable)
+	assert.False(t, info.NotifiedRecently)
+
+	// Mark as notified.
+	MarkNotified()
+
+	// Second check: recently notified.
+	info = CheckForUpdate(context.Background(), "v1.0.0")
+	require.NotNil(t, info)
+	assert.True(t, info.UpdateAvailable)
+	assert.True(t, info.NotifiedRecently)
+}

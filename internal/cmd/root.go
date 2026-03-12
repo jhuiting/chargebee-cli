@@ -88,10 +88,11 @@ func Execute() {
 
 	select {
 	case info := <-updateCh:
-		if info != nil && info.UpdateAvailable {
+		if info != nil && info.UpdateAvailable && !info.NotifiedRecently {
 			_, _ = fmt.Fprintln(os.Stderr)
 			output.Default.Warning("A new version of cb is available: %s → %s", info.CurrentVersion, info.LatestVersion)
 			output.Default.Dim("Update with: brew upgrade chargebee-cli")
+			update.MarkNotified()
 		}
 	default:
 	}
