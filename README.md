@@ -26,7 +26,7 @@ cb listen -f http://localhost:4242/webhook -e payment_succeeded,subscription_can
 
 Filter by event type, inspect payloads with `-j`, and iterate on your handler without touching staging.
 
-**Query any Chargebee resource without leaving your terminal.** Browse customers, subscriptions, invoices, plans, and more with built-in filter flags. Timestamp fields accept human-readable dates — no more unix math:
+**Query any Chargebee resource without leaving your terminal.** Browse customers, subscriptions, invoices, items, and more with built-in filter flags. Timestamp fields accept human-readable dates — no more unix math:
 
 ```sh
 cb customers list --company Acme -l 5
@@ -55,13 +55,13 @@ cb open api                       # API reference
 ### Homebrew (macOS)
 
 ```sh
-brew install --cask jhuiting/tap/chargebee-cli
+brew install jhuiting/tap/chargebee-cli
 ```
 
 To upgrade:
 
 ```sh
-brew update && brew upgrade --cask chargebee-cli
+brew update && brew upgrade chargebee-cli
 ```
 
 ### Binary download
@@ -102,10 +102,8 @@ cb open
 | `cb customers <op>` | List or retrieve customers |
 | `cb subscriptions <op>` | List or retrieve subscriptions |
 | `cb invoices <op>` | List or retrieve invoices |
-| `cb plans <op>` | List or retrieve plans |
-| `cb items <op>` | List or retrieve items |
+| `cb items <op>` | List or retrieve items (plans, addons, charges) |
 | `cb item-prices <op>` | List or retrieve item prices |
-| `cb addons <op>` | List or retrieve addons |
 | `cb events <op>` | List or retrieve events |
 | `cb get <path>` | GET request to the Chargebee API |
 | `cb listen` | Poll events and forward webhooks locally |
