@@ -89,6 +89,83 @@ func TestResourceListWithLimit(t *testing.T) {
 	assert.Equal(t, "5", gotLimit)
 }
 
+func TestResourceListLimitExceedsMax(t *testing.T) {
+	root := newResourceTestCmd("http://unused")
+	root.SetArgs([]string{"customers", "list", "-l", "101"})
+	err := root.Execute()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "--limit must be between 1 and 100")
+}
+
+func TestResourceListFilterValidation(t *testing.T) {
+	factory := func(_ *cobra.Command) (*api.Client, error) {
+		c := api.NewClient("test", "test-key")
+		c.BaseURL = "http://unused/api/v2"
+		return c, nil
+	}
+
+	t.Run("rejects invalid value", func(t *testing.T) {
+		root := &cobra.Command{Use: "cb", SilenceUsage: true, SilenceErrors: true}
+		root.PersistentFlags().String("site", "test", "")
+		root.PersistentFlags().String("api-key", "test-key", "")
+		root.PersistentFlags().String("profile", "", "")
+
+		cmd.RegisterResource(root, cmd.ResourceDef{
+			Name:       "items",
+			Singular:   "item",
+			APIPath:    "/items",
+			Operations: cmd.ReadOps("item"),
+			Filters: []cmd.FilterDef{
+				{Flag: "type", Field: "type", Operator: "is", Help: "filter by type",
+					ValidValues: []string{"plan", "addon", "charge"}},
+			},
+		}, factory)
+
+		root.SetArgs([]string{"items", "list", "--type", "invalid"})
+		err := root.Execute()
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), `invalid --type value "invalid"`)
+		assert.Contains(t, err.Error(), "plan, addon, charge")
+	})
+
+	t.Run("accepts valid value", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{"list": []any{}})
+		}))
+		defer srv.Close()
+
+		srvFactory := func(_ *cobra.Command) (*api.Client, error) {
+			c := api.NewClient("test", "test-key")
+			c.BaseURL = srv.URL + "/api/v2"
+			return c, nil
+		}
+
+		root := &cobra.Command{Use: "cb", SilenceUsage: true, SilenceErrors: true}
+		root.PersistentFlags().String("site", "test", "")
+		root.PersistentFlags().String("api-key", "test-key", "")
+		root.PersistentFlags().String("profile", "", "")
+
+		cmd.RegisterResource(root, cmd.ResourceDef{
+			Name:       "items",
+			Singular:   "item",
+			APIPath:    "/items",
+			Operations: cmd.ReadOps("item"),
+			Filters: []cmd.FilterDef{
+				{Flag: "type", Field: "type", Operator: "is", Help: "filter by type",
+					ValidValues: []string{"plan", "addon", "charge"}},
+			},
+		}, srvFactory)
+
+		root.SetArgs([]string{"items", "list", "--type", "addon"})
+		err := root.Execute()
+
+		require.NoError(t, err)
+	})
+}
+
 func TestResourceRetrieve(t *testing.T) {
 	var gotMethod, gotPath string
 

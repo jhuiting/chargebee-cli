@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -16,10 +17,11 @@ import (
 
 // FilterDef defines a convenience filter flag for a resource's list command.
 type FilterDef struct {
-	Flag     string // CLI flag name, e.g. "status", "email"
-	Field    string // Chargebee API field, e.g. "status", "email"
-	Operator string // Filter operator, e.g. "is", "starts_with"
-	Help     string // Flag help text
+	Flag        string   // CLI flag name, e.g. "status", "email"
+	Field       string   // Chargebee API field, e.g. "status", "email"
+	Operator    string   // Filter operator, e.g. "is", "starts_with"
+	Help        string   // Flag help text
+	ValidValues []string // if non-empty, value must be one of these
 }
 
 // ResourceDef declaratively defines a Chargebee API resource and its operations.
@@ -108,7 +110,7 @@ func buildOpCmd(res ResourceDef, op OpDef, factory ClientFactory) *cobra.Command
 	cmd.Flags().Bool("raw", false, "print compact JSON (no pretty-printing)")
 
 	if op.Name == "list" {
-		cmd.Flags().IntP("limit", "l", 0, "maximum number of results to return")
+		cmd.Flags().IntP("limit", "l", 0, "maximum number of results to return (1-100, default 10)")
 		cmd.Flags().String("offset", "", "pagination offset from a previous list response")
 		for _, f := range res.Filters {
 			cmd.Flags().String(f.Flag, "", f.Help)
@@ -180,6 +182,9 @@ func makeRunOp(res ResourceDef, op OpDef, factory ClientFactory) func(*cobra.Com
 
 		if op.Name == "list" {
 			if limit, _ := cmd.Flags().GetInt("limit"); limit > 0 {
+				if limit > 100 {
+					return fmt.Errorf("--limit must be between 1 and 100 (Chargebee API maximum)")
+				}
 				params.Set("limit", fmt.Sprintf("%d", limit))
 			}
 			if offset, _ := cmd.Flags().GetString("offset"); offset != "" {
@@ -187,6 +192,9 @@ func makeRunOp(res ResourceDef, op OpDef, factory ClientFactory) func(*cobra.Com
 			}
 			for _, f := range res.Filters {
 				if val, _ := cmd.Flags().GetString(f.Flag); val != "" {
+					if len(f.ValidValues) > 0 && !slices.Contains(f.ValidValues, val) {
+						return fmt.Errorf("invalid --%s value %q: must be one of: %s", f.Flag, val, strings.Join(f.ValidValues, ", "))
+					}
 					params.Set(fmt.Sprintf("%s[%s]", f.Field, f.Operator), val)
 				}
 			}
