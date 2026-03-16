@@ -26,6 +26,7 @@ func newTestRootCmd(baseURL, site, apiKey string) *cobra.Command {
 	}
 	root.AddCommand(cmd.NewGetCmdWithClient(clientFactory))
 	root.AddCommand(cmd.NewUsageCmdWithClient(clientFactory))
+	root.AddCommand(cmd.NewEntitlementsCmdWithClient(clientFactory))
 
 	return root
 }

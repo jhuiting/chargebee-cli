@@ -49,6 +49,7 @@ To get started, run:
 		newGetCmd(),
 		newListenCmd(),
 		newUsageCmd(),
+		newEntitlementsCmd(),
 	}
 	for _, def := range allResources() {
 		dataCmds = append(dataCmds, buildResourceCmd(def, resolveAPIClient))

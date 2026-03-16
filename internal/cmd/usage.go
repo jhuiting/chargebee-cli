@@ -49,6 +49,11 @@ type subscriptionData struct {
 	Status     string `json:"status"`
 }
 
+type paginatedSubscriptionResponse struct {
+	List       []subscriptionEntry `json:"list"`
+	NextOffset string              `json:"next_offset,omitempty"`
+}
+
 type usageListResponse struct {
 	List []usageEntry `json:"list"`
 }
